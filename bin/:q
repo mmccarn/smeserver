@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#List status of configured repositories
+
+printf "%-30s" "repository"
+printf "%-12s" "yum status"
+printf "%-10s" "db status"
+printf "(default)\n"
+
+yum repolist all | egrep -v '^L|^ |^repo id|^repolist' | \
+  sed 's/ .*\(...abled\).*/\t\1/' | \
+  while read repo status; do 
+    printf "%-30s" $repo; 
+    printf "%-12s" "$status"; 
+    printf "%-10s" "$(db yum_repositories getprop $repo status || echo "n/a")"; 
+    printf "($(cat /etc/e-smith/db/yum_repositories/defaults/$repo/status 2>/dev/null || echo "n/a"))\n"; 
+  done

@@ -1,0 +1,24 @@
+{
+    # Make a list of all valid local recipients
+    use esmith::AccountsDB;
+    my %valid = map { $_ => 1 } qw(group mypseudonym user mailmanlist mailinglist);
+
+    $OUT = "";
+
+    my $adb = esmith::AccountsDB->open_ro();
+
+    foreach my $account ($adb->get_all)
+    {
+        my $key = $account->key;
+        next unless $valid{$account->prop('type')};
+
+	if ($key =~ /\@/)
+	{
+	    $OUT .= "$key\n";
+	}
+	else
+	{
+	    $OUT .= "$key\@$_\n" for (@domains);
+	}
+    }
+}

@@ -1,0 +1,25 @@
+#!/bin/sh
+#
+# setup node environment
+#
+exec 2>&1
+#
+APP_DIR=/opt/etherpad-lite
+USER=etherpad
+#
+export NODE_EXEC=/usr/local/bin/node 
+export NODE_ENV=production
+export NODE_CONFIG_DIR=$APP_DIR
+export NODE_APP=$APP_DIR/node_modules/ep_etherpad-lite/node/server.js
+# NODE_ARGS=--server
+NODE_ARGS=
+env REDIS_PASS=redisPW4mmsi
+echo "Removing old package-lock.json files"
+find $APP_DIR -name package-lock.json -delete
+
+echo "Starting $NODE_EXEC $APP_DIR/$NODE_APP $NODE_ARGS"
+  cd $APP_DIR
+  exec                             \
+  setuidgid $USER                  \
+  $NODE_EXEC --experimental-worker $NODE_APP $NODE_ARGS
+

@@ -1,0 +1,138 @@
+{
+    $OUT = '';
+
+    # Generate qmail user assignments for pseudonyms. These will
+    # be handled by ~user/.qmail in the case of a user pseudonym
+    # or by ~admin/.qmail in the case of a system pseudonym or by
+    # alias/.qmail-groupname in the case of a group pseudonym.
+
+    my (undef, undef, $uid, $gid, undef, undef, undef, $dir, undef)
+	= getpwnam("alias");
+
+    # It is almost impossible to get Text::Template to output nothing
+    # on failure. It can be done by removing the newline at the end of
+    # this file but that is messy. Therefore, we'll simply return an
+    # error message that will make qmail-newu fail. Also send a
+    # warning message that will be captured in the logs.
+
+    unless (defined $uid && defined $gid && defined $dir)
+    {
+	my $msg =
+	    "Failed to obtain user details for \'alias\' "
+	    . "while processing pseudonym assignments.";
+
+	warn "$msg\n";
+	$OUT = $msg;
+	return;
+    }
+
+    my $alias_assign = "alias:${uid}:${gid}:${dir}";
+
+    undef $uid;
+    undef $gid;
+    undef $dir;
+
+    (undef, undef, $uid, $gid, undef, undef, undef, $dir, undef)
+	= getpwnam("admin");
+
+    unless (defined $uid && defined $gid && defined $dir)
+    {
+	my $msg =
+	    "Failed to obtain user details for \'admin\' "
+	    . "while processing pseudonym assignments.";
+
+	warn "$msg\n";
+	$OUT = $msg;
+	return;
+    }
+
+    my $admin_assign = "admin:${uid}:${gid}:${dir}";
+
+    # Create assignments for each pseudonym.
+
+    use esmith::AccountsDB;
+    my $adb = esmith::AccountsDB->open_ro();
+
+    foreach $pseudonym ( $adb->pseudonyms )
+    {
+	next if ( $pseudonym->key =~ /@/ );	# user@domain goes in virtualdomains
+
+	my $account = $pseudonym->prop('MyAccount');
+	unless ($account)
+	{
+	    my $key = $pseudonym->key;
+	    warn "pseudonym $key has no account property";
+	    next;
+	}
+	$account = $adb->get($pseudonym->prop('MyAccount'));
+	unless ($account)
+	{
+	    my $key = $pseudonym->key;
+	    warn "pseudonym $key points to account which does not exist";
+	    next;
+	}
+
+	$account = $adb->get($account->prop('MyAccount')) if ($account->prop('type') eq "pseudonym");
+	unless ($account)
+	{
+	    my $key = $pseudonym->key;
+	    warn "pseudonym $key points to pseudonym account which points to account which does not exist";
+	    next;
+	}
+
+	if ($account->prop('type') eq "pseudonym")
+        {
+            warn "users/assign: Skipping " . $pseudonym->key . " - too many pseudonym levels\n";
+            next;
+        }
+
+        if ($account->prop('type') eq "user")
+	{
+	    my (undef, undef, $uid, $gid, undef, undef, undef, $dir, undef)
+		= getpwnam($account->key);
+
+	    unless (defined $uid && defined $gid && defined $dir)
+	    {
+		my $msg =
+		    "Failed to obtain user details for \'" . $account->key . "\' "
+		    . "while processing pseudonym assignments.";
+
+		warn "$msg\n";
+		$OUT = $msg;
+		return;
+	    }
+
+	    $assign = $account->key . ":${uid}:${gid}:${dir}";
+
+	    # Assign mail for user_pseudonym@
+	    $OUT .= "=" . $pseudonym->key . ":${assign}:::\n";
+	    $OUT .= "+" . $pseudonym->key . "-:${assign}:-::\n";
+	    next;
+	}
+
+        if ($account->prop('type') eq "group" || $account->key eq "shared")
+	{
+	    $OUT .= "=" . $pseudonym->key . ":${alias_assign}:-:" . $account->key . ":\n";
+	    $OUT .= "+" . $pseudonym->key . "-:${alias_assign}:-:" . $account->key . ":\n";
+	    next;
+	}
+
+        if ($account->prop('type') eq "system" )
+	{
+	    $OUT .= "=" . $pseudonym->key . ":${admin_assign}:::\n";
+	    $OUT .= "+" . $pseudonym->key . "-:${admin_assign}:-::\n";
+	    next;
+	}
+    }
+
+    # Need to remove the final newline character. Blank lines in
+    # /var/qmail/users/assign are prohibited.
+
+    chomp($OUT);
+
+    # Failsafe: /var/qmail/users/assign cannot have blank lines.
+    # Therefore, if $OUT is empty, simply set up an assign for the
+    # alias user.
+
+    $OUT = "=alias:${alias_assign}:::" unless $OUT;
+}

@@ -1,0 +1,103 @@
+// ----------------------------------
+// IMAP
+// ----------------------------------
+
+// The mail host chosen to perform the log-in.
+// Leave blank to show a textbox at login, give a list of hosts
+// to display a pulldown menu or set one host as string.
+// To use SSL/TLS connection, enter hostname with prefix ssl:// or tls://
+// Supported replacement variables:
+// %n - hostname ($_SERVER['SERVER_NAME'])
+// %t - hostname without the first part
+// %d - domain (http hostname $_SERVER['HTTP_HOST'] without the first part)
+// %s - domain name after the '@' from e-mail address provided at login screen
+// For example %n = mail.domain.tld, %t = domain.tld
+// WARNING: After hostname change update of mail_host column in users table is
+//          required to match old user data records with the new host.
+    {$OUT .= "   \$config['default_host'] = 'ssl://$SystemName.$DomainName';\n";}
+
+// TCP port used for IMAP connections
+{$OUT .= "   \$config['default_port'] = $imaps{TCPPort};\n";}
+
+// IMAP AUTH type (DIGEST-MD5, CRAM-MD5, LOGIN, PLAIN or null to use
+// best server supported one)
+$config['imap_auth_type'] = null;
+
+// IMAP socket context options
+// See http://php.net/manual/en/context.ssl.php
+// The example below enables server certificate validation
+//$config['imap_conn_options'] = array(
+//  'ssl'         => array(
+//     'verify_peer'  => true,
+//     'verify_depth' => 3,
+//     'cafile'       => '/etc/openssl/certs/ca.crt',
+//   ),
+// );
+$config['imap_conn_options'] = null;
+
+// IMAP connection timeout, in seconds. Default: 0 (use default_socket_timeout)
+$config['imap_timeout'] = 0;
+
+// Optional IMAP authentication identifier to be used as authorization proxy
+$config['imap_auth_cid'] = null;
+
+// Optional IMAP authentication password to be used for imap_auth_cid
+$config['imap_auth_pw'] = null;
+
+// If you know your imap's folder delimiter, you can specify it here.
+// Otherwise it will be determined automatically
+$config['imap_delimiter'] = null;
+
+// If IMAP server doesn't support NAMESPACE extension, but you're
+// using shared folders or personal root folder is non-empty, you'll need to
+// set these options. All can be strings or arrays of strings.
+// Folders need to be ended with directory separator, e.g. "INBOX."
+// (special directory "~" is an exception to this rule)
+// These can be used also to overwrite server's namespaces
+$config['imap_ns_personal'] = null;
+$config['imap_ns_other']    = null;
+$config['imap_ns_shared']   = null;
+
+// By default IMAP capabilities are readed after connection to IMAP server
+// In some cases, e.g. when using IMAP proxy, there's a need to refresh the list
+// after login. Set to True if you've got this case.
+$config['imap_force_caps'] = false;
+
+// By default list of subscribed folders is determined using LIST-EXTENDED
+// extension if available. Some servers (dovecot 1.x) returns wrong results
+// for shared namespaces in this case. http://trac.roundcube.net/ticket/1486225
+// Enable this option to force LSUB command usage instead.
+// Deprecated: Use imap_disabled_caps = array('LIST-EXTENDED')
+$config['imap_force_lsub'] = false;
+
+// Some server configurations (e.g. Courier) doesn't list folders in all namespaces
+// Enable this option to force listing of folders in all namespaces
+$config['imap_force_ns'] = false;
+
+// List of disabled imap extensions.
+// Use if your IMAP server has broken implementation of some feature
+// and you can't remove it from CAPABILITY string on server-side.
+// For example UW-IMAP server has broken ESEARCH.
+// Note: Because the list is cached, re-login is required after change.
+$config['imap_disabled_caps'] = array();
+
+// Type of IMAP indexes cache. Supported values: 'db', 'apc' and 'memcache'.
+$config['imap_cache'] = null;
+
+// Enables messages cache. Only 'db' cache is supported.
+// This requires an IMAP server that supports QRESYNC and CONDSTORE
+// extensions (RFC7162). See synchronize() in program/lib/Roundcube/rcube_imap_cache.php
+// for further info, or if you experience syncing problems.
+$config['messages_cache'] = false;
+
+// Lifetime of IMAP indexes cache. Possible units: s, m, h, d, w
+$config['imap_cache_ttl'] = '10d';
+
+// Lifetime of messages cache. Possible units: s, m, h, d, w
+$config['messages_cache_ttl'] = '10d';
+
+// Maximum cached message size in kilobytes.
+// Note: On MySQL this should be less than (max_allowed_packet - 30%)
+$config['messages_cache_threshold'] = 50;
+
+

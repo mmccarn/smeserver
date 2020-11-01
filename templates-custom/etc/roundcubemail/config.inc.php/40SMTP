@@ -1,0 +1,62 @@
+// ----------------------------------
+// SMTP
+// ----------------------------------
+
+// SMTP server host (for sending mails).
+// To use SSL/TLS connection, enter hostname with prefix ssl:// or tls://
+// If left blank, the PHP mail() function is used
+// Supported replacement variables:
+// %h - user's IMAP hostname
+// %n - hostname ($_SERVER['SERVER_NAME'])
+// %t - hostname without the first part
+// %d - domain (http hostname $_SERVER['HTTP_HOST'] without the first part)
+// %z - IMAP domain (IMAP hostname without the first part)
+// For example %n = mail.domain.tld, %t = domain.tld
+ {$OUT .= "   \$config['smtp_server'] = 'ssl://$SystemName.$DomainName';\n";}
+
+// SMTP port (default is 25; use 587 for STARTTLS or 465 for the
+// deprecated SSL over SMTP (aka SMTPS))
+    {$OUT .= "\$config['smtp_port'] = $ssmtpd{'TCPPort'};\n";}
+
+// SMTP username (if required) if you use %u as the username Roundcube
+// will use the current username for login
+{$OUT .= "\$config['smtp_user'] = '%u';\n";}
+
+// SMTP password (if required) if you use %p as the password Roundcube
+// will use the current user's password for login
+{$OUT .= "\$config['smtp_pass'] = '%p';\n";}
+
+// SMTP AUTH type (DIGEST-MD5, CRAM-MD5, LOGIN, PLAIN or empty to use
+// best server supported one)
+$config['smtp_auth_type'] = '';
+
+// Optional SMTP authentication identifier to be used as authorization proxy
+$config['smtp_auth_cid'] = null;
+
+// Optional SMTP authentication password to be used for smtp_auth_cid
+$config['smtp_auth_pw'] = null;
+
+// SMTP HELO host 
+// Hostname to give to the remote server for SMTP 'HELO' or 'EHLO' messages 
+// Leave this blank and you will get the server variable 'server_name' or 
+// localhost if that isn't defined.
+$config['smtp_helo_host'] = '';
+
+// SMTP connection timeout, in seconds. Default: 0 (use default_socket_timeout)
+// Note: There's a known issue where using ssl connection with
+// timeout > 0 causes connection errors (https://bugs.php.net/bug.php?id=54511)
+$config['smtp_timeout'] = 0;
+
+// SMTP socket context options
+// See http://php.net/manual/en/context.ssl.php
+// The example below enables server certificate validation, and
+// requires 'smtp_timeout' to be non zero.
+// $config['smtp_conn_options'] = array(
+//   'ssl'         => array(
+//     'verify_peer'  => true,
+//     'verify_depth' => 3,
+//     'cafile'       => '/etc/openssl/certs/ca.crt',
+//   ),
+// );
+$config['smtp_conn_options'] = null;
+

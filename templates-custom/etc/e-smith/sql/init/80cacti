@@ -1,0 +1,22 @@
+{
+    my $db = $cacti{DbDatabase} || 'cacti_sme';
+    my $user = $cacti{DbUser} || 'cacti';
+    my $pass = $cacti{DbPassword} || 'changeme';
+    $OUT .= <<END
+#! /bin/sh
+    if [ -d /var/lib/mysql/$db ]; then
+      exit
+    fi
+    /usr/bin/mysql <<EOF
+    CREATE DATABASE $db DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+    use $db;
+    use mysql;
+    GRANT ALL PRIVILEGES ON $db.* TO $user\@localhost
+            IDENTIFIED BY '$pass';
+    GRANT SELECT ON mysql.time_zone_name TO '$user'\@'localhost';
+    flush privileges;
+EOF
+    /usr/bin/mysql_tzinfo_to_sql /usr/share/zoneinfo/ 2>/dev/null |/usr/bin/mysql mysql
+    /usr/bin/mysql $db < /usr/share/doc/cacti-1.1.19/cacti.sql
+END
+}
