@@ -102,6 +102,7 @@ rtorrent https://releases.ubuntu.com/20.04/ubuntu-20.04.1-live-server-amd64.iso.
 
 * ```rtorrent -h``` displays a help screen
 * Press Ctrl-q to quit and exit
+
 <details><summary>Press down arrow to select a torrent</summary>
 
 ```
@@ -156,4 +157,6 @@ Peers: 72(76) Min/Max: 13/200 Slots: U:3/51 D:0/50 U/I/C/A: 1/1/71/1 Unchoked: 1
 
 </details>
 
-Keep rtorrent running in the background using [the linux screen command](https://www.howtogeek.com/662422/how-to-use-linuxs-screen-command/)
+* Keep rtorrent running in the background using [the linux screen command](https://www.howtogeek.com/662422/how-to-use-linuxs-screen-command/)
+
+* Monitor network connections from bash using ``` netstat -an |egrep "6881|49164"```
