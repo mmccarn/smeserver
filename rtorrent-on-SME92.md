@@ -11,8 +11,8 @@ yum --enablerepo=epel install rtorrent
 ```
 
 ## Configuration
-Note: I ran these instructions as root.  **This is a bad idea**.
-You should create an unprivileged user account with access to the desired ibay and run rtorrent only as that user.
+Note: You can run these instructions as root but **this is a bad idea**.<br>
+Consider [running rtorrent as a non-privileged user](#running-rtorrent-as-a-non-privileged-user)
 
 ### rtorrent configuration
 
@@ -161,64 +161,168 @@ Peers: 72(76) Min/Max: 13/200 Slots: U:3/51 D:0/50 U/I/C/A: 1/1/71/1 Unchoked: 1
 
 * Monitor network connections from bash using ``` netstat -an |egrep "6881|49164"```
 
-### Running rtorrent as a non-privileged user
+## Running rtorrent as a non-privileged user
 
 Since rtorrent needs to be remotely accessible to the world, it is a good idea to run as a non-privileged user to avoid problems that might crop up due to bugs in the program or other issues.
 
 The "user" in question can be an ibay on SME Server.
 
 1. Create an ibay to use for running rtorrent and as the download destination for torrents
-  * Information bay name: ```rtorrent```
-  * Description: ```torrents```
-  * Group: ```Everyone```
-  * User access via file sharing or user ftp: ```Write=group, Read=group```
-  * Public access via web or anonymous ftp: ```Entire internet (no password required)```
-  * Execution of dynamic content (CGI, PHP, SSI): ```Enabled```<br>
-    (not required for rtorrent itself, but maybe you would later want to install [ruTorrent](https://github.com/Novik/ruTorrent))
-  * Force secure connections: ```Enabled```<br>
-    (not required for rtorrent, but why not?)
-
+    * Information bay name: ```rtorrent```
+    * Description: ```torrents```
+    * Group: ```Everyone```
+    * User access via file sharing or user ftp: ```Write=group, Read=group```
+    * Public access via web or anonymous ftp: ```Entire internet (no password required)```
+    * Execution of dynamic content (CGI, PHP, SSI): ```Enabled```<br>
+      (not required for rtorrent itself, but maybe you would later want to install [ruTorrent](https://github.com/Novik/ruTorrent))
+    * Force secure connections: ```Enabled```<br>
+      (not required for rtorrent, but why not?)
+    
 1. Create rtorrent configuration file
-  
-  ```
-  cp /usr/share/doc/rtorrent-0.9.4/rtorrent.rc /home/e-smith/files/ibays/rtorrent/files/.rtorrent.rc
-  vi /home/e-smith/files/ibays/rtorrent/files/.rtorrent.rc
-  #
-  # set the options appropriate for your situation
-  # the rest of this howto assumes that you set at least these options:
-  #
-  # directory = /home/e-smith/files/ibays/rtorrent/html/torrents
-  # port_range = 49164-49164
-  # dht_port = 6881
-  # peer_exchange = yes
-  ```
-  
+    
+    ```
+    cp /usr/share/doc/rtorrent-0.9.4/rtorrent.rc /home/e-smith/files/ibays/rtorrent/files/.rtorrent.rc
+    vi /home/e-smith/files/ibays/rtorrent/files/.rtorrent.rc
+    #
+    # set the options appropriate for your situation
+    # the rest of this howto assumes that you set at least these options:
+    #
+    # directory = /home/e-smith/files/ibays/rtorrent/html/torrents
+    # port_range = 49164-49164
+    # dht_port = 6881
+    # peer_exchange = yes
+    ```
+    
 1. Set some ibay details...
 
-  ```
-  # create a folder for downloads 
-  # put it in 'html' to be web-visible
-  # put it in 'files' to be SMB-visible (and change the value of 'directory' in .rtorrent.rc...)
-  mkdir -p /home/e-smith/files/ibays/rtorrent/html/torrents
-  
-  #
-  # Allow the ibay group ("shared") to write in the new folder
-  chmod g+w /home/e-smith/files/ibays/rtorrent/html/torrents
-  ```
-  
+    ```
+    # create a folder for downloads 
+    # put it in 'html' to be web-visible
+    # put it in 'files' to be SMB-visible (and change the value of 'directory' in .rtorrent.rc...)
+    mkdir -p /home/e-smith/files/ibays/rtorrent/html/torrents
+    
+    #
+    # Allow the ibay group ("shared") to write in the new folder
+    chmod g+w /home/e-smith/files/ibays/rtorrent/html/torrents
+    ```
+    
 1. Run (& test)
 
-  ```
-  sudo -u rtorrent rtorrent https://releases.ubuntu.com/20.04/ubuntu-20.04.1-live-server-amd64.iso.torrent
-  ```
-
-Notes on setting the download directory and other options:
-
-* The default setting for the download directory in rtorrent is ```"./"```.  This would let you specify the directory when you run rtorrent like this:
-
-  ```
-  cd /home/e-smith/files/ibays/rtorrent/html/torrents
-  sudo -u rtorrent rtorrent https://releases.ubuntu.com/20.04/ubuntu-20.04.1-live-server-amd64.iso.torrent
-  ```
+    ```
+    sudo -u rtorrent rtorrent https://releases.ubuntu.com/20.04/ubuntu-20.04.1-live-server-amd64.iso.torrent
+    ```
   
+## Install ruTorrent for web access
+
+These notes assume that you have created the 'rtorrent' ibay and configuration file as described above.
+
+1. Get the download link for the latest stable version of ruTorrent from [the Releases page](https://github.com/Novik/ruTorrent/releases)
+
+1. Download, extract, install
+    
+    Note that the download address below is the latest stable version as of Jan 24 2021.
+    
+    ```
+    cd /home/e-smith/files/ibays/rtorrent/files
+    wget https://github.com/Novik/ruTorrent/archive/v3.10.zip
+    unzip v3.10.zip
+    rsync -avz ruTorrent-3.10/ ../html/
+    
+    #
+    # create tmp folder and grant required rights to various folders
+    cd /home/e-smith/files/ibays/rtorrent/html
+    mkdir -p share/tmp
+    chmod g+wx share/tmp
+    chmod g+wx share/settings
+    chmod g+wc share/torrents
+    
+    #
+    # create local hard links to required executables 
+    mkdir -p /home/e-smith/files/ibays/rtorrent/bin
+    cd /home/e-smith/files/ibays/rtorrent/bin
+    ln /usr/bin/php php
+    ln /usr/bin/curl curl
+    ln /bin/gzip gzip
+    ln /usr/bin/id id
+    ln /usr/bin/stat stat
+    ln /usr/bin/python python
+    ln /usr/bin/pgrep pgrep
+    #
+    # alternatively, you could add /bin and /usr/bin to PHPBaseDir for the ibay
+    # (does this let a bug in rutorrent arbitrarily overwrite files in /bin or /usr/bin?)
+    # 
+    # db accounts setprop rtorrent PHPBaseDir /home/e-smith/files/ibays/rtorrent/:/tmp/:/bin/:/usr/bin/
+    # signal-event ibay-modify rtorrent
+    
+    #
+    # update /home/e-smith/files/ibays/rtorrent/conf/config.php
+    ```
+    
+    <details><summary>$pathToExternals for local hardlinks</summary>
+    
+    ```
+    $pathToExternals = array(
+                  "php"    => '/home/e-smith/files/ibays/rtorrent/bin/php',
+                  "curl"   => '/home/e-smith/files/ibays/rtorrent/bin/curl', 
+                  "gzip"   => '/home/e-smith/files/ibays/rtorrent/bin/gzip',
+                  "id"     => '/home/e-smith/files/ibays/rtorrent/bin/id',
+                  "stat"   => '/home/e-smith/files/ibays/rtorrent/bin/stat',
+                  "python" => '/home/e-smith/files/ibays/rtorrent/bin/python',
+                  "pgrep"  => '/home/e-smith/files/ibays/rtorrent/bin/pgrep',
+    ```
+    
+    </details>
+    
+    <details><summary>$pathToExternals for native paths</summary>
+     
+    ```
+    $pathToExternals = array(
+                  "php"    => '/usr/bin/php',
+                  "curl"   => '/usr/bin/curl', 
+                  "gzip"   => '/bin/gzip',
+                  "id"     => '/usr/bin/id',
+                  "stat"   => '/usr/bin/stat',
+                  "python" => '/usr/bin/python',
+                  "pgrep"  => '/usr/bin/pgrep',
+    ```
+    
+    </details>
+    
+1. Create a "session" directory and update .rtorrent.rc to use it
+    
+    ```
+    mkdir -p /home/e-smith/files/ibays/rtorrent/session
+    chown www:shared /home/e-smith/files/ibays/rtorrent/session
+    chmod g+wx /home/e-smith/files/ibays/rtorrent/session
+    
+    # create or replace the exsting session definition
+    sed -i 's|^[# ]*session.*|session = /home/e-smith/files/ibays/rtorrent/session|' /home/e-smith/files/ibays/rtorrent/files/.rtorrent.rc
+    ```
+      
+1. Add the 'scgi' setting to .rtorrent.rc
+    
+    ```
+    printf "\nnetwork.scgi.open_port = \"127.0.0.1:5000\"\n >> /home/e-smith/files/ibays/rtorrent/files/.rtorrent.rc
+    ```
+    
+    Close rtorrent using Ctrl-Q, then restart it using ```sudo -u rtorrent rtorrent```
+    
+At this point, **as long as rtorrent is running as the user "rtorrent"** you can monitor and manage it at https://your-sme-server/rtorrent
+
+## Run rTorrent in the background
+
+1. Using [screen](https://www.howtogeek.com/662422/how-to-use-linuxs-screen-command/)
+    
+    To keep rtorrent running when you close your ssh window:
+    * start a "screen" session
+    * start rtorrent in the screen session using ```sudo -u rtorrent rtorrent```
+    * detach from the screen session by pressing Ctrl-A Ctrl-D
+    
+    rtorrent will keep running unless it encounters a fatal error.
+    
+    You can re-connect to the running copy of rtorrent using ```screen -r```
+    
+1. Using a supervised service
+    
+    INCOMPLETE
 
