@@ -160,3 +160,65 @@ Peers: 72(76) Min/Max: 13/200 Slots: U:3/51 D:0/50 U/I/C/A: 1/1/71/1 Unchoked: 1
 * Keep rtorrent running in the background using [the linux screen command](https://www.howtogeek.com/662422/how-to-use-linuxs-screen-command/)
 
 * Monitor network connections from bash using ``` netstat -an |egrep "6881|49164"```
+
+### Running rtorrent as a non-privileged user
+
+Since rtorrent needs to be remotely accessible to the world, it is a good idea to run as a non-privileged user to avoid problems that might crop up due to bugs in the program or other issues.
+
+The "user" in question can be an ibay on SME Server.
+
+1. Create an ibay to use for running rtorrent and as the download destination for torrents
+  * Information bay name: ```rtorrent```
+  * Description: ```torrents```
+  * Group: ```Everyone```
+  * User access via file sharing or user ftp: ```Write=group, Read=group```
+  * Public access via web or anonymous ftp: ```Entire internet (no password required)```
+  * Execution of dynamic content (CGI, PHP, SSI): ```Enabled```<br>
+    (not required for rtorrent itself, but maybe you would later want to install [ruTorrent](https://github.com/Novik/ruTorrent))
+  * Force secure connections: ```Enabled```<br>
+    (not required for rtorrent, but why not?)
+
+1. Create rtorrent configuration file
+  
+  ```
+  cp /usr/share/doc/rtorrent-0.9.4/rtorrent.rc /home/e-smith/files/ibays/rtorrent/files/.rtorrent.rc
+  vi /home/e-smith/files/ibays/rtorrent/files/.rtorrent.rc
+  #
+  # set the options appropriate for your situation
+  # the rest of this howto assumes that you set at least these options:
+  #
+  # directory = /home/e-smith/files/ibays/rtorrent/html/torrents
+  # port_range = 49164-49164
+  # dht_port = 6881
+  # peer_exchange = yes
+  ```
+  
+1. Set some ibay details...
+
+  ```
+  # create a folder for downloads 
+  # put it in 'html' to be web-visible
+  # put it in 'files' to be SMB-visible (and change the value of 'directory' in .rtorrent.rc...)
+  mkdir -p /home/e-smith/files/ibays/rtorrent/html/torrents
+  
+  #
+  # Allow the ibay group ("shared") to write in the new folder
+  chmod g+w /home/e-smith/files/ibays/rtorrent/html/torrents
+  ```
+  
+1. Run (& test)
+
+  ```
+  sudo -u rtorrent rtorrent https://releases.ubuntu.com/20.04/ubuntu-20.04.1-live-server-amd64.iso.torrent
+  ```
+
+Notes on setting the download directory and other options:
+
+* The default setting for the download directory in rtorrent is ```"./"```.  This would let you specify the directory when you run rtorrent like this:
+
+  ```
+  cd /home/e-smith/files/ibays/rtorrent/html/torrents
+  sudo -u rtorrent rtorrent https://releases.ubuntu.com/20.04/ubuntu-20.04.1-live-server-amd64.iso.torrent
+  ```
+  
+
