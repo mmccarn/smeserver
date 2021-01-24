@@ -322,6 +322,33 @@ At this point, **as long as rtorrent is running as the user "rtorrent"** you can
     
     You can re-connect to the running copy of rtorrent using ```screen -r```
     
+1. Using crontab '@reboot'
+    
+    Add the entry below to the crontab for root using ```crontab -e``` to have rtorrent start automatically every time the system is rebooted.
+    
+    ```
+    @reboot /usr/bin/screen -dmfa -S rtorrent /usr/bin/sudo -u rtorrent /usr/bin/rtorrent
+    ```
+    
+    You can connect to rtorrent to see what it's up to using
+    
+    ```
+    screen -r rtorrent
+    ```
+    
+    "-r rtorrent" connects to the screen session that we named "rtorrent" using the "-S" argument in the first command.
+    
+1. Using a crontab job that executes every minute
+    
+    Add the entry below to the root crontab using ```crontab -e``` to check once every minute to see if rtorrent is running, and restart it if it is not.
+    
+    ```
+    * * * * * /sbin/pidof rtorrent >/dev/null 2>&1 || /usr/bin/screen -dmfa -S rtorrent /usr/bin/sudo -u rtorrent /usr/bin/rtorrent
+    ```
+    
+    * Replace the first "\*" with "\*/5" to check every 5 minutes, or "\*/15" to check every 15 minutes.
+    * Note that if you do this, rtorrent will restart automatically unless you come back into ```crontab -e``` and delete or comment this line.
+    
 1. Using a supervised service
     
     INCOMPLETE
